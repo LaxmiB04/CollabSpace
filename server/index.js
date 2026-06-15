@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes.js';
+
 
 dotenv.config();
 
@@ -15,6 +17,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({ message: 'CollabSpace API is running!' });
 });
+
+app.use('/api/auth', authRoutes);
+
 
 // DB Connection + Server Start
 const PORT = process.env.PORT || 5000;

@@ -1,0 +1,26 @@
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Laxmi",
+  "email": "laxmirb2005@gmail.com",
+  "password": "123456"
+}
+
+###
+
+###
+
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "laxmirb2005@gmail.com",
+  "password": "123456"
+}
+
+###
+
+
+GET http://localhost:5000/api/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTUyNDgwOCwiZXhwIjoxNzgyMTI5NjA4fQ.T4Ld0rnT_PZnH2B6cHkuQuTD5KZy7JwE4MaOM0zQbys
