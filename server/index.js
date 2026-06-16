@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
+import workspaceRoutes from './routes/workspaceRoutes.js';
+
 
 
 dotenv.config();
@@ -19,6 +21,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/workspaces', workspaceRoutes);
 
 
 // DB Connection + Server Start
