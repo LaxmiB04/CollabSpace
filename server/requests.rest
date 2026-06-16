@@ -22,15 +22,35 @@ Content-Type: application/json
 
 
 GET http://localhost:5000/api/auth/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU3ODU3NiwiZXhwIjoxNzgyMTgzMzc2fQ.A2hXhdpsRaIcRq1VpPiq5lAZgjW1nx8cB_741Y4d6_Y
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU4MDEwNCwiZXhwIjoxNzgyMTg0OTA0fQ.6nel-taN8G24DbJ_C0FiWEVJkWD8N2lrmjn2IaDS08k
+
 
 ###
 
+
+
 POST http://localhost:5000/api/workspaces
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU3ODY3MCwiZXhwIjoxNzgyMTgzNDcwfQ.iuXFITtDLyPhyOuJPCIgVr3DeQF85xMm5uCMkOe3Iis
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU4MDEwNCwiZXhwIjoxNzgyMTg0OTA0fQ.6nel-taN8G24DbJ_C0FiWEVJkWD8N2lrmjn2IaDS08k
 
 {
   "name": "My First Workspace",
   "description": "Testing CollabSpace"
+}
+
+
+
+
+
+###
+
+POST http://localhost:5000/api/channels
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU4MDEwNCwiZXhwIjoxNzgyMTg0OTA0fQ.6nel-taN8G24DbJ_C0FiWEVJkWD8N2lrmjn2IaDS08k
+
+
+{
+  "name": "general",
+  "description": "General discussion",
+  "workspaceId": "6a30c1627b29efaaaad57a96"
 }
