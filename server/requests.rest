@@ -54,3 +54,33 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmM
   "description": "General discussion",
   "workspaceId": "6a30c1627b29efaaaad57a96"
 }
+
+
+
+###
+
+POST http://localhost:5000/api/messages
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU4MDEwNCwiZXhwIjoxNzgyMTg0OTA0fQ.6nel-taN8G24DbJ_C0FiWEVJkWD8N2lrmjn2IaDS08k
+
+{
+  "content": "Hello CollabSpace!",
+  "channelId": "6a30c1787b29efaaaad57a99"
+}
+
+
+
+###
+
+
+
+POST http://localhost:5000/api/tasks
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmZlODhmMTk5MTkwZDAzZTZkZWIzZiIsImlhdCI6MTc4MTU4MDEwNCwiZXhwIjoxNzgyMTg0OTA0fQ.6nel-taN8G24DbJ_C0FiWEVJkWD8N2lrmjn2IaDS08k
+
+{
+  "title": "First Task",
+  "description": "Test task",
+  "channelId": "6a30c1627b29efaaaad57a96",
+  "priority": "high"
+}
