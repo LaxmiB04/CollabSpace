@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore.js';
 import api from '../services/api.js';
 import toast from 'react-hot-toast';
 
-function Sidebar() {
+function Sidebar({ onChannelSelect, selectedChannel }) {
   const { user, logout } = useAuthStore();
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
@@ -63,10 +63,14 @@ function Sidebar() {
       <div className="channels">
         <h4>Channels</h4>
         {channels.map((channel) => (
-          <div key={channel._id} className="channel-item">
-            # {channel.name}
-          </div>
-        ))}
+  <div
+    key={channel._id}
+    className={`channel-item ${selectedChannel?._id === channel._id ? 'active' : ''}`}
+    onClick={() => onChannelSelect(channel)}
+  >
+    # {channel.name}
+  </div>
+))}
       </div>
 
       <button onClick={logout} className="logout-btn">Logout</button>
