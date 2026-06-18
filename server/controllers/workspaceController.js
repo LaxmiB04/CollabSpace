@@ -1,5 +1,6 @@
 import Workspace from '../models/Workspace.js';
 import User from '../models/User.js';
+import Channel from '../models/Channel.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // @route POST /api/workspaces
@@ -62,7 +63,7 @@ export const joinWorkspace = async (req, res) => {
   try {
     const { inviteCode } = req.body;
 
-    const workspace = await Workspace.findOne({ inviteCode });
+    const workspace = await Workspace.findOne({ inviteCode }).populate('channels');
     if (!workspace) {
       return res.status(404).json({ message: 'Invalid invite code' });
     }
@@ -74,9 +75,17 @@ export const joinWorkspace = async (req, res) => {
       return res.status(400).json({ message: 'Already a member' });
     }
 
+    // Add user to workspace
     workspace.members.push({ user: req.user._id, role: 'member' });
     await workspace.save();
 
+    // Add user to all existing channels in the workspace
+    await Channel.updateMany(
+      { workspace: workspace._id },
+      { $push: { members: req.user._id } }
+    );
+
+    // Add workspace to user's workspaces array
     await User.findByIdAndUpdate(req.user._id, {
       $push: { workspaces: workspace._id },
     });

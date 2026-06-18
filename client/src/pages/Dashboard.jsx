@@ -5,15 +5,20 @@ import Sidebar from '../components/Sidebar.jsx';
 import ChatArea from '../components/ChatArea.jsx';
 
 function Dashboard() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const navigate = useNavigate();
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!token) {
       navigate('/login');
+    } else {
+      setLoading(false);
     }
-  }, [user, navigate]);
+  }, [token, navigate]);
+
+  if (loading) return <div style={{ color: 'white', padding: '20px' }}>Loading...</div>;
 
   return (
     <div className="dashboard">

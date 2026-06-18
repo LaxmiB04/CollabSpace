@@ -25,8 +25,10 @@ function ChatArea({ channel }) {
 
     // Listen for new messages
     socket.on('receiveMessage', (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+  if (message.sender?._id !== user._id) {
+    setMessages((prev) => [...prev, message]);
+  }
+});
 
     // Listen for typing
     socket.on('userTyping', (data) => {
@@ -54,27 +56,26 @@ function ChatArea({ channel }) {
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+  if (!newMessage.trim()) return;
 
-    try {
-      const response = await api.post('/messages', {
-        content: newMessage,
-        channelId: channel._id,
-      });
+  try {
+    const response = await api.post('/messages', {
+      content: newMessage,
+      channelId: channel._id,
+    });
 
-      // Emit to socket
-      socket.emit('sendMessage', {
-        content: newMessage,
-        channelId: channel._id,
-        sender: user,
-      });
+    // Only emit to socket for OTHER users, don't add locally
+    socket.emit('sendMessage', {
+      ...response.data,
+      channelId: channel._id,
+    });
 
-      setMessages((prev) => [...prev, response.data]);
-      setNewMessage('');
-    } catch (error) {
-      toast.error('Failed to send message');
-    }
-  };
+    setMessages((prev) => [...prev, response.data]);
+    setNewMessage('');
+  } catch (error) {
+    toast.error('Failed to send message');
+  }
+};
 
   const handleTyping = () => {
     socket.emit('typing', {
