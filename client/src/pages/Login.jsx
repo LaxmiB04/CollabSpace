@@ -54,6 +54,23 @@ function Login() {
         </button>
       </form>
       <p>Don't have an account? <Link to="/register">Register</Link></p>
+      <div style={{ textAlign: 'center', color: '#888', margin: '8px 0' }}>or</div>
+      
+       <a href="http://localhost:5000/api/auth/google"
+        style={{
+          display: 'block',
+          padding: '10px',
+          borderRadius: '8px',
+          border: '1px solid #333',
+          background: '#16213e',
+          color: '#e0e0e0',
+          textAlign: 'center',
+          textDecoration: 'none',
+          fontSize: '14px',
+        }}
+      >
+        🔵 Continue with Google
+      </a>
     </div>
   );
 }
