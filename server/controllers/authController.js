@@ -54,3 +54,21 @@ export const loginUser = async (req, res) => {
 export const getMe = async (req, res) => {
   res.json(req.user);
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, avatar } = req.body;
+
+    const updateFields = {};
+    if (name) updateFields.name = name;
+    if (avatar) updateFields.avatar = avatar;
+
+    const user = await User.findByIdAndUpdate(req.user._id, updateFields, {
+      new: true,
+    }).select('-password');
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

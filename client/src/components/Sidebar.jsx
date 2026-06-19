@@ -5,15 +5,19 @@ import toast from 'react-hot-toast';
 import CreateWorkspaceModal from './CreateWorkspaceModal.jsx';
 import CreateChannelModal from './CreateChannelModal.jsx';
 import JoinWorkspaceModal from './JoinWorkspaceModal.jsx';
+import { useNavigate } from 'react-router-dom';
+import InviteModal from './InviteModal.jsx';
 
 function Sidebar({ onChannelSelect, selectedChannel }) {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [channels, setChannels] = useState([]);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -48,10 +52,17 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
 
   return (
     <div className="sidebar">
-      <div className="sidebar-header">
-        <h3>CollabSpace</h3>
-        <span>{user?.name}</span>
-      </div>
+      <div className="sidebar-header" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
+  <h3>CollabSpace</h3>
+  <div className="user-info">
+    {user?.avatar ? (
+      <img src={user.avatar} alt="avatar" className="sidebar-avatar" />
+    ) : (
+      <div className="sidebar-avatar-placeholder">{user?.name?.[0]}</div>
+    )}
+    <span>{user?.name}</span>
+  </div>
+</div>
 
       <div className="workspaces">
         <h4>Workspaces</h4>
@@ -64,6 +75,11 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
             {workspace.name}
           </div>
         ))}
+        {selectedWorkspace && (
+  <button className="add-btn" onClick={() => setShowInviteModal(true)}>
+    🔗 Invite People
+  </button>
+)}
         <button className="add-btn" onClick={() => setShowWorkspaceModal(true)}>
           + New Workspace
         </button>
@@ -120,6 +136,12 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
       setSelectedWorkspace(workspace);
       fetchChannels(workspace._id);
     }}
+  />
+)}
+{showInviteModal && (
+  <InviteModal
+    workspace={selectedWorkspace}
+    onClose={() => setShowInviteModal(false)}
   />
 )}
 </div>
