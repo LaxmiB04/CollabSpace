@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
 import Login from './pages/Login.jsx';
@@ -26,6 +26,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );

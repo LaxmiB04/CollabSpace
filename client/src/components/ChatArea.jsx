@@ -11,6 +11,8 @@ function ChatArea({ channel }) {
   const [newMessage, setNewMessage] = useState('');
   const [typing, setTyping] = useState(false);
   const [typingUser, setTypingUser] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const { user } = useAuthStore();
   const messagesEndRef = useRef(null);
 
@@ -77,6 +79,40 @@ function ChatArea({ channel }) {
   }
 };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const messageResponse = await api.post('/messages', {
+        content: `📎 ${response.data.filename}`,
+        channelId: channel._id,
+        attachments: [{ url: response.data.url, type: response.data.type }],
+      });
+
+      socket.emit('sendMessage', {
+        ...messageResponse.data,
+        channelId: channel._id,
+      });
+
+      setMessages((prev) => [...prev, messageResponse.data]);
+      toast.success('File uploaded!');
+    } catch (error) {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
   const handleTyping = () => {
     socket.emit('typing', {
       channelId: channel._id,
@@ -108,7 +144,27 @@ function ChatArea({ channel }) {
         {messages.map((msg, index) => (
           <div key={index} className={`message ${msg.sender?._id === user?._id ? 'own' : ''}`}>
             <div className="message-sender">{msg.sender?.name}</div>
-            <div className="message-content">{msg.content}</div>
+            {msg.attachments && msg.attachments.length > 0 ? (
+              <div className="message-content">
+                {msg.attachments[0].type?.startsWith('image') ? (
+  <a href={msg.attachments[0].url} target="_blank" rel="noopener noreferrer">
+    <img src={msg.attachments[0].url} alt="attachment" className="message-image" />
+  </a>
+) : (
+                  <a 
+  href={msg.attachments[0].url} 
+  download
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className="message-file-link"
+>
+  📄 {msg.content}
+</a>
+                )}
+              </div>
+            ) : (
+              <div className="message-content">{msg.content}</div>
+            )}
             <div className="message-time">
               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
@@ -119,6 +175,15 @@ function ChatArea({ channel }) {
       </div>
 
       <div className="message-input">
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileUpload}
+        />
+        <button onClick={() => fileInputRef.current.click()} disabled={uploading}>
+          📎
+        </button>
         <input
           type="text"
           placeholder={`Message # ${channel.name}`}

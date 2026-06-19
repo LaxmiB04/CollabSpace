@@ -580,3 +580,26 @@ body {
   color: white;
   border-color: #7c83fd;
 }
+
+.message-image {
+  max-width: 250px;
+  border-radius: 8px;
+  display: block;
+}
+
+.message-file-link {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.message-file-link:hover {
+  color: #d0d0ff;
+}
+
+.message.own .message-file-link {
+  color: #ffffff;
+}
+
+.message:not(.own) .message-file-link {
+  color: #7c83fd;
+}

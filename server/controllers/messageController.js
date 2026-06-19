@@ -4,7 +4,7 @@ import Channel from '../models/Channel.js';
 // @route POST /api/messages
 export const sendMessage = async (req, res) => {
   try {
-    const { content, channelId } = req.body;
+    const { content, channelId, attachments } = req.body;
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -15,6 +15,7 @@ export const sendMessage = async (req, res) => {
       content,
       sender: req.user._id,
       channel: channelId,
+      attachments: attachments || [],
     });
 
     const populated = await message.populate('sender', 'name email avatar');

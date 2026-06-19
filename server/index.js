@@ -11,9 +11,14 @@ import workspaceRoutes from './routes/workspaceRoutes.js';
 import channelRoutes from './routes/channelRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import { configureCloudinary } from './config/cloudinary.js';
+
+
 
 dotenv.config();
 configurePassport();
+configureCloudinary();
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,6 +42,7 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/channels', channelRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/upload', uploadRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
