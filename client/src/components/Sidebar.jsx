@@ -7,8 +7,9 @@ import CreateChannelModal from './CreateChannelModal.jsx';
 import JoinWorkspaceModal from './JoinWorkspaceModal.jsx';
 import { useNavigate } from 'react-router-dom';
 import InviteModal from './InviteModal.jsx';
+import { io } from 'socket.io-client';
 
-function Sidebar({ onChannelSelect, selectedChannel }) {
+function Sidebar({ onChannelSelect, selectedChannel , onWorkspaceSelect}) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState([]);
@@ -18,23 +19,40 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const socket = io('http://localhost:5000');
+
+  useEffect(() => {
+  if (user) {
+    socket.emit('userOnline', user._id);
+  }
+
+  socket.on('onlineUsers', (users) => {
+    setOnlineUsers(users);
+  });
+
+  return () => {
+    socket.off('onlineUsers');
+  };
+}, [user]);
 
   useEffect(() => {
     fetchWorkspaces();
   }, []);
 
   const fetchWorkspaces = async () => {
-    try {
-      const response = await api.get('/workspaces');
-      setWorkspaces(response.data);
-      if (response.data.length > 0) {
-        setSelectedWorkspace(response.data[0]);
-        fetchChannels(response.data[0]._id);
-      }
-    } catch (error) {
-      toast.error('Failed to load workspaces');
+  try {
+    const response = await api.get('/workspaces');
+    setWorkspaces(response.data);
+    if (response.data.length > 0) {
+      setSelectedWorkspace(response.data[0]);
+      onWorkspaceSelect(response.data[0]);
+      fetchChannels(response.data[0]._id);
     }
-  };
+  } catch (error) {
+    toast.error('Failed to load workspaces');
+  }
+};
 
   const fetchChannels = async (workspaceId) => {
     try {
@@ -46,9 +64,10 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
   };
 
   const handleWorkspaceClick = (workspace) => {
-    setSelectedWorkspace(workspace);
-    fetchChannels(workspace._id);
-  };
+  setSelectedWorkspace(workspace);
+  onWorkspaceSelect(workspace);
+  fetchChannels(workspace._id);
+};
 
   return (
     <div className="sidebar">
@@ -61,6 +80,7 @@ function Sidebar({ onChannelSelect, selectedChannel }) {
       <div className="sidebar-avatar-placeholder">{user?.name?.[0]}</div>
     )}
     <span>{user?.name}</span>
+    {onlineUsers.includes(user?._id) && <span className="online-dot"></span>}
   </div>
 </div>
 

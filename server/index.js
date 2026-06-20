@@ -44,8 +44,15 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
 
+const onlineUsers = new Map();
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
+  socket.on('userOnline', (userId) => {
+    onlineUsers.set(userId, socket.id);
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
+  });
 
   socket.on('joinChannel', (channelId) => {
     socket.join(channelId);
@@ -68,6 +75,13 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
   });
 });
 
