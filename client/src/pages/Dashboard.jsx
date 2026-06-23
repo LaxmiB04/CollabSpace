@@ -6,6 +6,7 @@ import ChatArea from '../components/ChatArea.jsx';
 import TaskBoard from '../components/TaskBoard.jsx';
 import MemberList from '../components/MemberList.jsx';
 import { io } from 'socket.io-client';
+import NotificationBell from '../components/NotificationBell.jsx';
 
 const socket = io('http://localhost:5000');
 
@@ -64,6 +65,9 @@ function Dashboard() {
             >
               ✅ Tasks
             </button>
+             <div style={{ marginLeft: 'auto' }}>
+                <NotificationBell />
+             </div>
           </div>
         )}
         {view === 'chat' || !selectedChannel ? (

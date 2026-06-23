@@ -20,7 +20,13 @@ const messageSchema = new mongoose.Schema(
     attachments: [
       {
         url: { type: String },
-        type: { type: String }, // image, file, etc.
+        type: { type: String },
+      },
+    ],
+    reactions: [
+      {
+        emoji: { type: String },
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       },
     ],
     readBy: [

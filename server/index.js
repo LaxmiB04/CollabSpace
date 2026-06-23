@@ -13,7 +13,7 @@ import messageRoutes from './routes/messageRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import { configureCloudinary } from './config/cloudinary.js';
-
+import notificationRoutes from './routes/notificationRoutes.js';
 
 
 dotenv.config();
@@ -43,6 +43,7 @@ app.use('/api/channels', channelRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const onlineUsers = new Map();
 

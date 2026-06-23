@@ -19,20 +19,17 @@ function ChatArea({ channel }) {
   useEffect(() => {
     if (!channel) return;
 
-    // Join the channel room
     socket.emit('joinChannel', channel._id);
-
-    // Fetch existing messages
     fetchMessages();
 
-    // Listen for new messages
     socket.on('receiveMessage', (message) => {
-  if (message.sender?._id !== user._id) {
-    setMessages((prev) => [...prev, message]);
-  }
-});
+      if (message.isReactionUpdate) {
+        setMessages((prev) => prev.map((m) => (m._id === message._id ? message : m)));
+      } else if (message.sender?._id !== user._id) {
+        setMessages((prev) => [...prev, message]);
+      }
+    });
 
-    // Listen for typing
     socket.on('userTyping', (data) => {
       setTypingUser(data.userName);
       setTimeout(() => setTypingUser(''), 2000);
@@ -58,26 +55,25 @@ function ChatArea({ channel }) {
   };
 
   const handleSend = async () => {
-  if (!newMessage.trim()) return;
+    if (!newMessage.trim()) return;
 
-  try {
-    const response = await api.post('/messages', {
-      content: newMessage,
-      channelId: channel._id,
-    });
+    try {
+      const response = await api.post('/messages', {
+        content: newMessage,
+        channelId: channel._id,
+      });
 
-    // Only emit to socket for OTHER users, don't add locally
-    socket.emit('sendMessage', {
-      ...response.data,
-      channelId: channel._id,
-    });
+      socket.emit('sendMessage', {
+        ...response.data,
+        channelId: channel._id,
+      });
 
-    setMessages((prev) => [...prev, response.data]);
-    setNewMessage('');
-  } catch (error) {
-    toast.error('Failed to send message');
-  }
-};
+      setMessages((prev) => [...prev, response.data]);
+      setNewMessage('');
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -124,6 +120,21 @@ function ChatArea({ channel }) {
     if (e.key === 'Enter') handleSend();
   };
 
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      const response = await api.patch(`/messages/${messageId}/react`, { emoji });
+      setMessages((prev) => prev.map((m) => (m._id === messageId ? response.data : m)));
+
+      socket.emit('sendMessage', {
+        ...response.data,
+        channelId: channel._id,
+        isReactionUpdate: true,
+      });
+    } catch (error) {
+      toast.error('Failed to react');
+    }
+  };
+
   if (!channel) {
     return (
       <div className="main-content">
@@ -141,46 +152,62 @@ function ChatArea({ channel }) {
       </div>
 
       <div className="messages-container">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.sender?._id === user?._id ? 'own' : ''}`}>
-            <div className="message-sender">{msg.sender?.name}</div>
-            {msg.attachments && msg.attachments.length > 0 ? (
-              <div className="message-content">
-                {msg.attachments[0].type?.startsWith('image') ? (
-  <a href={msg.attachments[0].url} target="_blank" rel="noopener noreferrer">
-    <img src={msg.attachments[0].url} alt="attachment" className="message-image" />
-  </a>
-) : (
-                  <a 
-  href={msg.attachments[0].url} 
-  download
-  target="_blank" 
-  rel="noopener noreferrer" 
-  className="message-file-link"
->
-  📄 {msg.content}
-</a>
+        {messages.map((msg, index) => {
+          const reactionCounts = {};
+          (msg.reactions || []).forEach((r) => {
+            reactionCounts[r.emoji] = (reactionCounts[r.emoji] || 0) + 1;
+          });
+
+          return (
+            <div key={index} className={`message ${msg.sender?._id === user?._id ? 'own' : ''}`}>
+              <div className="message-sender">{msg.sender?.name}</div>
+              {msg.attachments && msg.attachments.length > 0 ? (
+                <div className="message-content">
+                  {msg.attachments[0].type?.startsWith('image') ? (
+                    <a href={msg.attachments[0].url} target="_blank" rel="noopener noreferrer">
+                      <img src={msg.attachments[0].url} alt="attachment" className="message-image" />
+                    </a>
+                  ) : (
+                    <a href={msg.attachments[0].url} download target="_blank" rel="noopener noreferrer" className="message-file-link">
+                      📄 {msg.content}
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <div className="message-content">{msg.content}</div>
+              )}
+
+              <div className="message-footer">
+                <div className="reaction-picker">
+                  {['👍', '❤️', '😂', '🎉', '😮'].map((emoji) => (
+                    <span key={emoji} className="reaction-option" onClick={() => handleReaction(msg._id, emoji)}>
+                      {emoji}
+                    </span>
+                  ))}
+                </div>
+                {Object.keys(reactionCounts).length > 0 && (
+                  <div className="reactions-display">
+                    {Object.entries(reactionCounts).map(([emoji, count]) => (
+                      <span key={emoji} className="reaction-badge" onClick={() => handleReaction(msg._id, emoji)}>
+                        {emoji} {count}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
-            ) : (
-              <div className="message-content">{msg.content}</div>
-            )}
-            <div className="message-time">
-              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+              <div className="message-time">
+                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {typingUser && <div className="typing-indicator">{typingUser} is typing...</div>}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="message-input">
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileUpload}
-        />
+        <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileUpload} />
         <button onClick={() => fileInputRef.current.click()} disabled={uploading}>
           📎
         </button>
