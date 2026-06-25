@@ -40,13 +40,14 @@ function Sidebar({ onChannelSelect, selectedChannel , onWorkspaceSelect}) {
     fetchWorkspaces();
   }, []);
 
-  const fetchWorkspaces = async () => {
+const fetchWorkspaces = async () => {
   try {
     const response = await api.get('/workspaces');
     setWorkspaces(response.data);
     if (response.data.length > 0) {
-      setSelectedWorkspace(response.data[0]);
-      onWorkspaceSelect(response.data[0]);
+      const fullWorkspace = await api.get(`/workspaces/${response.data[0]._id}`);
+      setSelectedWorkspace(fullWorkspace.data);
+      onWorkspaceSelect(fullWorkspace.data);
       fetchChannels(response.data[0]._id);
     }
   } catch (error) {
@@ -63,10 +64,15 @@ function Sidebar({ onChannelSelect, selectedChannel , onWorkspaceSelect}) {
     }
   };
 
-  const handleWorkspaceClick = (workspace) => {
-  setSelectedWorkspace(workspace);
-  onWorkspaceSelect(workspace);
-  fetchChannels(workspace._id);
+  const handleWorkspaceClick = async (workspace) => {
+  try {
+    const response = await api.get(`/workspaces/${workspace._id}`);
+    setSelectedWorkspace(response.data);
+    onWorkspaceSelect(response.data);
+    fetchChannels(workspace._id);
+  } catch (error) {
+    toast.error('Failed to load workspace details');
+  }
 };
 
   return (

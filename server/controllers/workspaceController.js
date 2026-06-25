@@ -95,3 +95,82 @@ export const joinWorkspace = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @route PATCH /api/workspaces/:id/members/:userId/role
+export const updateMemberRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    const requesterMember = workspace.members.find(
+      (m) => m.user.toString() === req.user._id.toString()
+    );
+
+    if (!requesterMember || requesterMember.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can change roles' });
+    }
+
+    const member = workspace.members.find(
+      (m) => m.user.toString() === req.params.userId
+    );
+
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+
+    member.role = role;
+    await workspace.save();
+
+    const populated = await Workspace.findById(req.params.id)
+      .populate('owner', 'name email avatar')
+      .populate('members.user', 'name email avatar');
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route DELETE /api/workspaces/:id/members/:userId
+export const removeMember = async (req, res) => {
+  try {
+    const workspace = await Workspace.findById(req.params.id);
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    const requesterMember = workspace.members.find(
+      (m) => m.user.toString() === req.user._id.toString()
+    );
+
+    if (!requesterMember || requesterMember.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admins can remove members' });
+    }
+
+    if (workspace.owner.toString() === req.params.userId) {
+      return res.status(400).json({ message: 'Cannot remove the workspace owner' });
+    }
+
+    workspace.members = workspace.members.filter(
+      (m) => m.user.toString() !== req.params.userId
+    );
+    await workspace.save();
+
+    await User.findByIdAndUpdate(req.params.userId, {
+      $pull: { workspaces: workspace._id },
+    });
+
+    const populated = await Workspace.findById(req.params.id)
+      .populate('owner', 'name email avatar')
+      .populate('members.user', 'name email avatar');
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

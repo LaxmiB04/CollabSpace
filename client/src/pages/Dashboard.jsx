@@ -71,10 +71,10 @@ function Dashboard() {
           </div>
         )}
         {view === 'chat' || !selectedChannel ? (
-          <ChatArea channel={selectedChannel} />
-        ) : (
-          <TaskBoard channel={selectedChannel} />
-        )}
+  <ChatArea channel={selectedChannel} />
+) : (
+  <TaskBoard channel={selectedChannel} workspace={selectedWorkspace} />
+)}
       </div>
       <MemberList workspace={selectedWorkspace} onlineUsers={onlineUsers} />
     </div>

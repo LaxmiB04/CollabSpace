@@ -6,15 +6,29 @@ import useAuthStore from '../store/authStore.js';
 const COLUMNS = ['todo', 'inProgress', 'done'];
 const COLUMN_LABELS = { todo: 'To Do', inProgress: 'In Progress', done: 'Done' };
 
-function TaskBoard({ channel }) {
+function TaskBoard({ channel, workspace }) {
   const [tasks, setTasks] = useState([]);
+  const [members, setMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium' });
+  const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', assignee: '', dueDate: '' });
   const { user } = useAuthStore();
 
   useEffect(() => {
     if (channel) fetchTasks();
   }, [channel]);
+
+  useEffect(() => {
+    if (workspace) fetchMembers();
+  }, [workspace]);
+
+  const fetchMembers = async () => {
+    try {
+      const response = await api.get(`/workspaces/${workspace._id}`);
+      setMembers(response.data.members);
+    } catch (error) {
+      toast.error('Failed to load members');
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -31,9 +45,11 @@ function TaskBoard({ channel }) {
       const response = await api.post('/tasks', {
         ...newTask,
         channelId: channel._id,
+        assignee: newTask.assignee || null,
+        dueDate: newTask.dueDate || null,
       });
       setTasks((prev) => [...prev, response.data]);
-      setNewTask({ title: '', description: '', priority: 'medium' });
+      setNewTask({ title: '', description: '', priority: 'medium', assignee: '', dueDate: '' });
       setShowForm(false);
       toast.success('Task created!');
     } catch (error) {
@@ -61,6 +77,8 @@ function TaskBoard({ channel }) {
   };
 
   if (!channel) return null;
+
+  const isOverdue = (dueDate) => dueDate && new Date(dueDate) < new Date();
 
   return (
     <div className="task-board">
@@ -93,6 +111,22 @@ function TaskBoard({ channel }) {
             <option value="medium">Medium Priority</option>
             <option value="high">High Priority</option>
           </select>
+          <select
+            value={newTask.assignee}
+            onChange={(e) => setNewTask({ ...newTask, assignee: e.target.value })}
+          >
+            <option value="">Unassigned</option>
+            {members.map((m) => (
+              <option key={m.user._id} value={m.user._id}>
+                {m.user.name}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={newTask.dueDate}
+            onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+          />
           <div className="modal-buttons">
             <button onClick={() => setShowForm(false)}>Cancel</button>
             <button onClick={handleCreateTask}>Create</button>
@@ -115,7 +149,22 @@ function TaskBoard({ channel }) {
                     )}
                     <div className="task-meta">
                       <span className={`priority-badge ${task.priority}`}>{task.priority}</span>
+                      {task.dueDate && (
+                        <span className={`due-date-badge ${isOverdue(task.dueDate) ? 'overdue' : ''}`}>
+                          📅 {new Date(task.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
+                    {task.assignee && (
+                      <div className="task-assignee">
+                        {task.assignee.avatar ? (
+                          <img src={task.assignee.avatar} alt="assignee" className="assignee-avatar" />
+                        ) : (
+                          <div className="assignee-avatar-placeholder">{task.assignee.name?.[0]}</div>
+                        )}
+                        <span>{task.assignee.name}</span>
+                      </div>
+                    )}
                     <div className="task-actions">
                       {status !== 'todo' && (
                         <button onClick={() => handleStatusChange(task._id, status === 'inProgress' ? 'todo' : 'inProgress')}>

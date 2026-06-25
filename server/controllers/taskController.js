@@ -15,6 +15,11 @@ export const createTask = async (req, res) => {
       dueDate: dueDate || null,
     });
 
+    const populated = await task.populate([
+      { path: 'assignee', select: 'name email avatar' },
+      { path: 'createdBy', select: 'name email avatar' },
+    ]);
+
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({ message: error.message });
