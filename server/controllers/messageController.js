@@ -56,6 +56,7 @@ export const getMessages = async (req, res) => {
   try {
     const messages = await Message.find({ channel: req.params.channelId })
       .populate('sender', 'name email avatar')
+      .populate('readBy', 'name avatar')
       .sort({ createdAt: 1 });
 
     res.json(messages);
@@ -140,6 +141,94 @@ export const toggleReaction = async (req, res) => {
     const populated = await message.populate('sender', 'name email avatar');
 
     res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route GET /api/messages/:channelId/search?q=keyword
+export const searchMessages = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || !q.trim()) {
+      return res.json([]);
+    }
+
+    const messages = await Message.find({
+      channel: req.params.channelId,
+      content: { $regex: q, $options: 'i' },
+    })
+      .populate('sender', 'name email avatar')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route PATCH /api/messages/:id/read
+export const markAsRead = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    const alreadyRead = message.readBy.some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+
+    if (!alreadyRead) {
+      message.readBy.push(req.user._id);
+      await message.save();
+    }
+
+    const populated = await message.populate([
+      { path: 'sender', select: 'name email avatar' },
+      { path: 'readBy', select: 'name avatar' },
+    ]);
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route PATCH /api/messages/:id/pin
+export const togglePin = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    message.isPinned = !message.isPinned;
+    await message.save();
+
+    const populated = await message.populate('sender', 'name email avatar');
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route GET /api/messages/:channelId/pinned
+export const getPinnedMessages = async (req, res) => {
+  try {
+    const messages = await Message.find({
+      channel: req.params.channelId,
+      isPinned: true,
+    })
+      .populate('sender', 'name email avatar')
+      .sort({ createdAt: -1 });
+
+    res.json(messages);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

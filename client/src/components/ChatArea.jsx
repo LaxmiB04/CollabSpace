@@ -3,6 +3,8 @@ import api from '../services/api.js';
 import useAuthStore from '../store/authStore.js';
 import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
+import MessageSearch from './MessageSearch.jsx';
+import PinnedMessages from './PinnedMessages.jsx';
 
 const socket = io('http://localhost:5000');
 
@@ -17,7 +19,8 @@ function ChatArea({ channel }) {
   const messagesEndRef = useRef(null);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
-
+  const observerRef = useRef(null);
+  const [pinRefresh, setPinRefresh] = useState(0);
 
   useEffect(() => {
     if (!channel) return;
@@ -44,9 +47,50 @@ function ChatArea({ channel }) {
     };
   }, [channel]);
 
-  useEffect(() => {
+  const prevMessageCount = useRef(0);
+
+useEffect(() => {
+  if (messages.length > prevMessageCount.current) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }
+  prevMessageCount.current = messages.length;
+}, [messages]);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.dataset.messageId;
+            const senderId = entry.target.dataset.senderId;
+            if (messageId && senderId !== user._id) {
+              markMessageAsRead(messageId);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [channel]);
+
+  const markMessageAsRead = async (messageId) => {
+    try {
+      const response = await api.patch(`/messages/${messageId}/read`);
+      setMessages((prev) => prev.map((m) => (m._id === messageId ? response.data : m)));
+    } catch (error) {
+      console.error('Failed to mark as read');
+    }
+  };
+
+  const observeMessage = (element) => {
+    if (element && observerRef.current) {
+      observerRef.current.observe(element);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -138,6 +182,54 @@ function ChatArea({ channel }) {
     }
   };
 
+  const handleEditStart = (msg) => {
+    setEditingId(msg._id);
+    setEditText(msg.content);
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const handleEditSave = async (messageId) => {
+    if (!editText.trim()) return;
+    try {
+      const response = await api.patch(`/messages/${messageId}`, { content: editText });
+      setMessages((prev) => prev.map((m) => (m._id === messageId ? response.data : m)));
+
+      socket.emit('sendMessage', {
+        ...response.data,
+        channelId: channel._id,
+        isReactionUpdate: true,
+      });
+
+      setEditingId(null);
+      setEditText('');
+    } catch (error) {
+      toast.error('Failed to edit message');
+    }
+  };
+
+  const handleDelete = async (messageId) => {
+    try {
+      await api.delete(`/messages/${messageId}`);
+      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      toast.success('Message deleted');
+    } catch (error) {
+      toast.error('Failed to delete message');
+    }
+  };
+
+  const handleScrollToMessage = (messageId) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('highlight-message');
+      setTimeout(() => element.classList.remove('highlight-message'), 2000);
+    }
+  };
+
   if (!channel) {
     return (
       <div className="main-content">
@@ -147,51 +239,29 @@ function ChatArea({ channel }) {
     );
   }
 
-  const handleEditStart = (msg) => {
-  setEditingId(msg._id);
-  setEditText(msg.content);
-};
-
-const handleEditCancel = () => {
-  setEditingId(null);
-  setEditText('');
-};
-
-const handleEditSave = async (messageId) => {
-  if (!editText.trim()) return;
+  const handleTogglePin = async (messageId) => {
   try {
-    const response = await api.patch(`/messages/${messageId}`, { content: editText });
+    const response = await api.patch(`/messages/${messageId}/pin`);
     setMessages((prev) => prev.map((m) => (m._id === messageId ? response.data : m)));
-
-    socket.emit('sendMessage', {
-      ...response.data,
-      channelId: channel._id,
-      isReactionUpdate: true,
-    });
-
-    setEditingId(null);
-    setEditText('');
+    setPinRefresh((prev) => prev + 1);
+    toast.success(response.data.isPinned ? 'Message pinned!' : 'Message unpinned');
   } catch (error) {
-    toast.error('Failed to edit message');
-  }
-};
-
-const handleDelete = async (messageId) => {
-  try {
-    await api.delete(`/messages/${messageId}`);
-    setMessages((prev) => prev.filter((m) => m._id !== messageId));
-    toast.success('Message deleted');
-  } catch (error) {
-    toast.error('Failed to delete message');
+    toast.error('Failed to pin message');
   }
 };
 
   return (
     <div className="chat-area">
       <div className="chat-header">
-        <h3># {channel.name}</h3>
-        <p>{channel.description}</p>
-      </div>
+  <div>
+    <h3># {channel.name}</h3>
+    <p>{channel.description}</p>
+  </div>
+  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <PinnedMessages channel={channel} onResultClick={handleScrollToMessage} refreshTrigger={pinRefresh} />
+    <MessageSearch channel={channel} onResultClick={handleScrollToMessage} />
+  </div>
+</div>
 
       <div className="messages-container">
         {messages.map((msg, index) => {
@@ -201,7 +271,14 @@ const handleDelete = async (messageId) => {
           });
 
           return (
-            <div key={index} className={`message ${msg.sender?._id === user?._id ? 'own' : ''}`}>
+            <div
+              id={`message-${msg._id}`}
+              key={msg._id}
+              ref={observeMessage}
+              data-message-id={msg._id}
+              data-sender-id={msg.sender?._id}
+              className={`message ${msg.sender?._id === user?._id ? 'own' : ''} ${msg.isPinned ? 'pinned' : ''}`}
+            >
               <div className="message-sender">{msg.sender?.name}</div>
               {editingId === msg._id ? (
                 <div className="message-edit-box">
@@ -234,33 +311,63 @@ const handleDelete = async (messageId) => {
               )}
 
               <div className="message-footer">
-                <div className="reaction-picker">
-                  {['👍', '❤️', '😂', '🎉', '😮'].map((emoji) => (
-                    <span key={emoji} className="reaction-option" onClick={() => handleReaction(msg._id, emoji)}>
-                      {emoji}
-                    </span>
-                  ))}
-                </div>
-                {Object.keys(reactionCounts).length > 0 && (
-                  <div className="reactions-display">
-                    {Object.entries(reactionCounts).map(([emoji, count]) => (
-                      <span key={emoji} className="reaction-badge" onClick={() => handleReaction(msg._id, emoji)}>
-                        {emoji} {count}
+                  <div className="reaction-picker">
+                    {['👍', '❤️', '😂', '🎉', '😮'].map((emoji) => (
+                      <span key={emoji} className="reaction-option" onClick={() => handleReaction(msg._id, emoji)}>
+                        {emoji}
                       </span>
                     ))}
                   </div>
-                )}
-                {msg.sender?._id === user?._id && !msg.attachments?.length && editingId !== msg._id && (
-    <div className="message-actions">
-      <span onClick={() => handleEditStart(msg)}>✏️</span>
-      <span onClick={() => handleDelete(msg._id)}>🗑️</span>
-    </div>
-  )}
-              </div>
+                  {Object.keys(reactionCounts).length > 0 && (
+                    <div className="reactions-display">
+                      {Object.entries(reactionCounts).map(([emoji, count]) => (
+                        <span key={emoji} className="reaction-badge" onClick={() => handleReaction(msg._id, emoji)}>
+                          {emoji} {count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {msg.sender?._id === user?._id && editingId !== msg._id && (
+                    <div className="message-actions">
+                      <span onClick={() => handleTogglePin(msg._id)}>{msg.isPinned ? '📌' : '📍'}</span>
+                      {!msg.attachments?.length && (
+                        <span onClick={() => handleEditStart(msg)}>✏️</span>
+                      )}
+                      <span onClick={() => handleDelete(msg._id)}>🗑️</span>
+                    </div>
+                  )}
+                </div>
 
               <div className="message-time">
                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
+
+              {msg.sender?._id === user?._id && msg.readBy && msg.readBy.length > 0 && (
+                <div className="read-receipts">
+                  {msg.readBy.slice(0, 3).map((reader) => (
+                    reader.avatar ? (
+                      <img
+                        key={reader._id}
+                        src={reader.avatar}
+                        alt="read"
+                        className="read-receipt-avatar"
+                        title={`Read by ${reader.name}`}
+                      />
+                    ) : (
+                      <div
+                        key={reader._id}
+                        className="read-receipt-avatar-placeholder"
+                        title={`Read by ${reader.name}`}
+                      >
+                        {reader.name?.[0]}
+                      </div>
+                    )
+                  ))}
+                  {msg.readBy.length > 3 && (
+                    <span className="read-receipt-more">+{msg.readBy.length - 3}</span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
