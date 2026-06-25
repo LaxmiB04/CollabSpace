@@ -64,6 +64,32 @@ export const getMessages = async (req, res) => {
   }
 };
 
+// @route PATCH /api/messages/:id
+export const editMessage = async (req, res) => {
+  try {
+    const { content } = req.body;
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    if (message.sender.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    message.content = content;
+    message.isEdited = true;
+    await message.save();
+
+    const populated = await message.populate('sender', 'name email avatar');
+
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @route DELETE /api/messages/:id
 export const deleteMessage = async (req, res) => {
   try {

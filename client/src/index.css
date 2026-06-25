@@ -996,3 +996,54 @@ body {
   font-size: 13px;
   padding: 20px 0;
 }
+
+.message-edit-box {
+  display: flex;
+  gap: 6px;
+}
+
+.message-edit-box input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #7c83fd;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-size: 13px;
+  outline: none;
+}
+
+.message-edit-box button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #7c83fd;
+  color: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.edited-label {
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+}
+
+.message-actions {
+  display: none;
+  gap: 6px;
+}
+
+.message:hover .message-actions {
+  display: flex;
+}
+
+.message-actions span {
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.message-actions span:hover {
+  opacity: 1;
+}

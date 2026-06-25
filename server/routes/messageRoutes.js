@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { sendMessage, getMessages, deleteMessage, toggleReaction } from '../controllers/messageController.js';
+import { sendMessage, getMessages, deleteMessage, toggleReaction, editMessage } from '../controllers/messageController.js';
+
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.post('/', sendMessage);
 router.get('/:channelId', getMessages);
 router.delete('/:id', deleteMessage);
 router.patch('/:id/react', toggleReaction);
+router.patch('/:id', editMessage);
 
 
 export default router;

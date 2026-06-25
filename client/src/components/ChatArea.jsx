@@ -15,6 +15,9 @@ function ChatArea({ channel }) {
   const fileInputRef = useRef(null);
   const { user } = useAuthStore();
   const messagesEndRef = useRef(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+
 
   useEffect(() => {
     if (!channel) return;
@@ -144,6 +147,45 @@ function ChatArea({ channel }) {
     );
   }
 
+  const handleEditStart = (msg) => {
+  setEditingId(msg._id);
+  setEditText(msg.content);
+};
+
+const handleEditCancel = () => {
+  setEditingId(null);
+  setEditText('');
+};
+
+const handleEditSave = async (messageId) => {
+  if (!editText.trim()) return;
+  try {
+    const response = await api.patch(`/messages/${messageId}`, { content: editText });
+    setMessages((prev) => prev.map((m) => (m._id === messageId ? response.data : m)));
+
+    socket.emit('sendMessage', {
+      ...response.data,
+      channelId: channel._id,
+      isReactionUpdate: true,
+    });
+
+    setEditingId(null);
+    setEditText('');
+  } catch (error) {
+    toast.error('Failed to edit message');
+  }
+};
+
+const handleDelete = async (messageId) => {
+  try {
+    await api.delete(`/messages/${messageId}`);
+    setMessages((prev) => prev.filter((m) => m._id !== messageId));
+    toast.success('Message deleted');
+  } catch (error) {
+    toast.error('Failed to delete message');
+  }
+};
+
   return (
     <div className="chat-area">
       <div className="chat-header">
@@ -161,7 +203,19 @@ function ChatArea({ channel }) {
           return (
             <div key={index} className={`message ${msg.sender?._id === user?._id ? 'own' : ''}`}>
               <div className="message-sender">{msg.sender?.name}</div>
-              {msg.attachments && msg.attachments.length > 0 ? (
+              {editingId === msg._id ? (
+                <div className="message-edit-box">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleEditSave(msg._id)}
+                    autoFocus
+                  />
+                  <button onClick={() => handleEditSave(msg._id)}>Save</button>
+                  <button onClick={handleEditCancel}>Cancel</button>
+                </div>
+              ) : msg.attachments && msg.attachments.length > 0 ? (
                 <div className="message-content">
                   {msg.attachments[0].type?.startsWith('image') ? (
                     <a href={msg.attachments[0].url} target="_blank" rel="noopener noreferrer">
@@ -174,7 +228,9 @@ function ChatArea({ channel }) {
                   )}
                 </div>
               ) : (
-                <div className="message-content">{msg.content}</div>
+                <div className="message-content">
+                  {msg.content} {msg.isEdited && <span className="edited-label">(edited)</span>}
+                </div>
               )}
 
               <div className="message-footer">
@@ -194,6 +250,12 @@ function ChatArea({ channel }) {
                     ))}
                   </div>
                 )}
+                {msg.sender?._id === user?._id && !msg.attachments?.length && editingId !== msg._id && (
+    <div className="message-actions">
+      <span onClick={() => handleEditStart(msg)}>✏️</span>
+      <span onClick={() => handleDelete(msg._id)}>🗑️</span>
+    </div>
+  )}
               </div>
 
               <div className="message-time">
