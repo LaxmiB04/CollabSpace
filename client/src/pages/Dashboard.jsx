@@ -7,11 +7,12 @@ import TaskBoard from '../components/TaskBoard.jsx';
 import MemberList from '../components/MemberList.jsx';
 import { io } from 'socket.io-client';
 import NotificationBell from '../components/NotificationBell.jsx';
+import { getMe } from '../services/authService.js';
 
 const socket = io('http://localhost:5000');
 
 function Dashboard() {
-  const { user, token } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
@@ -22,12 +23,15 @@ function Dashboard() {
   const [showMobileMembers, setShowMobileMembers] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-    } else {
-      setLoading(false);
-    }
-  }, [token, navigate]);
+    getMe()
+      .then((u) => {
+        setUser(u);
+        setLoading(false);
+      })
+      .catch(() => {
+        navigate('/login');
+      });
+  }, []);
 
   useEffect(() => {
     if (user) {

@@ -14,6 +14,7 @@ import taskRoutes from './routes/taskRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import { configureCloudinary } from './config/cloudinary.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import cookieParser from 'cookie-parser';
 
 
 dotenv.config();
@@ -29,8 +30,12 @@ const io = new Server(httpServer, {
   },
 });
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use(passport.initialize());
 
 app.get('/', (req, res) => {

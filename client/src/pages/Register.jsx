@@ -19,7 +19,7 @@ function Register() {
     setLoading(true);
     try {
       const data = await registerUser(formData);
-      login(data, data.token);
+      login(data);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {

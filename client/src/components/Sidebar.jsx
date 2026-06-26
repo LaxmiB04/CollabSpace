@@ -75,6 +75,17 @@ const fetchWorkspaces = async () => {
   }
 };
 
+const handleLogout = async () => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error) {
+    console.error('Logout failed');
+  }
+  logout();
+  navigate('/login');
+};
+
+
   return (
     <div className="sidebar">
       <div className="sidebar-header" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
@@ -132,7 +143,7 @@ const fetchWorkspaces = async () => {
         )}
       </div>
 
-      <button onClick={logout} className="logout-btn">Logout</button>
+      <button onClick={handleLogout} className="logout-btn">Logout</button>
 
       {showWorkspaceModal && (
         <CreateWorkspaceModal

@@ -19,7 +19,7 @@ function Login() {
     setLoading(true);
     try {
       const data = await loginUser(formData);
-      login(data, data.token);
+      login(data);
       toast.success('Logged in successfully!');
       navigate('/dashboard');
     } catch (error) {

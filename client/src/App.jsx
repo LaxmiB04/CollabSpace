@@ -9,14 +9,11 @@ import useAuthStore from './store/authStore.js';
 import { getMe } from './services/authService.js';
 import Profile from './pages/Profile.jsx';
 
-
 function App() {
-  const { token, setUser } = useAuthStore();
+  const { setUser } = useAuthStore();
 
   useEffect(() => {
-    if (token) {
-      getMe().then((user) => setUser(user)).catch(() => {});
-    }
+    getMe().then((user) => setUser(user)).catch(() => {});
   }, []);
 
   return (
