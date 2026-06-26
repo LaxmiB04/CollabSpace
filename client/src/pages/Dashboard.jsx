@@ -18,6 +18,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('chat');
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showMobileMembers, setShowMobileMembers] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -45,38 +47,56 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-      <Sidebar
-        onChannelSelect={setSelectedChannel}
-        selectedChannel={selectedChannel}
-        onWorkspaceSelect={setSelectedWorkspace}
-      />
+      <button className="mobile-menu-btn" onClick={() => setShowMobileSidebar(true)}>
+        ☰
+      </button>
+
+      <div className={`sidebar-wrapper ${showMobileSidebar ? 'mobile-open' : ''}`}>
+        <button className="mobile-close-btn" onClick={() => setShowMobileSidebar(false)}>
+          ✕
+        </button>
+        <Sidebar
+          onChannelSelect={(channel) => {
+            setSelectedChannel(channel);
+            setShowMobileSidebar(false);
+          }}
+          selectedChannel={selectedChannel}
+          onWorkspaceSelect={setSelectedWorkspace}
+        />
+      </div>
+      {showMobileSidebar && <div className="mobile-overlay" onClick={() => setShowMobileSidebar(false)}></div>}
+
       <div className="main-panel">
         {selectedChannel && (
           <div className="view-toggle">
-            <button
-              className={view === 'chat' ? 'active' : ''}
-              onClick={() => setView('chat')}
-            >
+            <button className={view === 'chat' ? 'active' : ''} onClick={() => setView('chat')}>
               💬 Chat
             </button>
-            <button
-              className={view === 'tasks' ? 'active' : ''}
-              onClick={() => setView('tasks')}
-            >
+            <button className={view === 'tasks' ? 'active' : ''} onClick={() => setView('tasks')}>
               ✅ Tasks
             </button>
-             <div style={{ marginLeft: 'auto' }}>
-                <NotificationBell />
-             </div>
+            <button className="mobile-members-btn" onClick={() => setShowMobileMembers(true)}>
+              👥
+            </button>
+            <div style={{ marginLeft: 'auto' }}>
+              <NotificationBell />
+            </div>
           </div>
         )}
         {view === 'chat' || !selectedChannel ? (
-  <ChatArea channel={selectedChannel} />
-) : (
-  <TaskBoard channel={selectedChannel} workspace={selectedWorkspace} />
-)}
+          <ChatArea channel={selectedChannel} />
+        ) : (
+          <TaskBoard channel={selectedChannel} workspace={selectedWorkspace} />
+        )}
       </div>
-      <MemberList workspace={selectedWorkspace} onlineUsers={onlineUsers} />
+
+      <div className={`member-list-wrapper ${showMobileMembers ? 'mobile-open' : ''}`}>
+        <button className="mobile-close-btn" onClick={() => setShowMobileMembers(false)}>
+          ✕
+        </button>
+        <MemberList workspace={selectedWorkspace} onlineUsers={onlineUsers} />
+      </div>
+      {showMobileMembers && <div className="mobile-overlay" onClick={() => setShowMobileMembers(false)}></div>}
     </div>
   );
 }
