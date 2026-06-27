@@ -56,7 +56,7 @@ function Login() {
       <p>Don't have an account? <Link to="/register">Register</Link></p>
       <div style={{ textAlign: 'center', color: '#888', margin: '8px 0' }}>or</div>
       
-       <a href="http://localhost:5000/api/auth/google"
+      <a href={`${import.meta.env.VITE_API_URL}/api/auth/google`}
         style={{
           display: 'block',
           padding: '10px',
