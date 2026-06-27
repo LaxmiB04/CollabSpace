@@ -1,5 +1,5 @@
 import express from 'express';
-import { createWorkspace, getWorkspaces, getWorkspaceById, joinWorkspace, updateMemberRole, removeMember } from '../controllers/workspaceController.js';
+import { createWorkspace, getWorkspaces, getWorkspaceById, joinWorkspace, updateMemberRole, removeMember, updateWorkspace, deleteWorkspace } from '../controllers/workspaceController.js';
 
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -13,5 +13,7 @@ router.get('/:id', getWorkspaceById);
 router.post('/join', joinWorkspace);
 router.patch('/:id/members/:userId/role', updateMemberRole);
 router.delete('/:id/members/:userId', removeMember);
+router.patch('/:id', updateWorkspace);
+router.delete('/:id', deleteWorkspace);
 
 export default router;

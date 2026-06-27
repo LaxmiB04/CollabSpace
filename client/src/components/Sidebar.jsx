@@ -20,6 +20,9 @@ function Sidebar({ onChannelSelect, selectedChannel , onWorkspaceSelect}) {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [editingWorkspace, setEditingWorkspace] = useState(false);
+  const [editingChannel, setEditingChannel] = useState(null);
+  const [editName, setEditName] = useState('');
   const socket = io('http://localhost:5000');
 
   useEffect(() => {
@@ -75,6 +78,58 @@ const fetchWorkspaces = async () => {
   }
 };
 
+const handleRenameWorkspace = async () => {
+  if (!editName.trim()) return;
+  try {
+    const response = await api.patch(`/workspaces/${selectedWorkspace._id}`, { name: editName });
+    setWorkspaces((prev) => prev.map((w) => (w._id === response.data._id ? response.data : w)));
+    setSelectedWorkspace(response.data);
+    onWorkspaceSelect(response.data);
+    setEditingWorkspace(false);
+    toast.success('Workspace renamed!');
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed to rename');
+  }
+};
+
+const handleDeleteWorkspace = async () => {
+  if (!window.confirm(`Delete "${selectedWorkspace.name}"? This cannot be undone.`)) return;
+  try {
+    await api.delete(`/workspaces/${selectedWorkspace._id}`);
+    const remaining = workspaces.filter((w) => w._id !== selectedWorkspace._id);
+    setWorkspaces(remaining);
+    setSelectedWorkspace(remaining[0] || null);
+    onWorkspaceSelect(remaining[0] || null);
+    setChannels([]);
+    toast.success('Workspace deleted');
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed to delete');
+  }
+};
+
+const handleRenameChannel = async (channel) => {
+  if (!editName.trim()) return;
+  try {
+    const response = await api.patch(`/channels/${channel._id}`, { name: editName });
+    setChannels((prev) => prev.map((c) => (c._id === response.data._id ? response.data : c)));
+    setEditingChannel(null);
+    toast.success('Channel renamed!');
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed to rename');
+  }
+};
+
+const handleDeleteChannel = async (channel) => {
+  if (!window.confirm(`Delete "#${channel.name}"? All messages will be lost.`)) return;
+  try {
+    await api.delete(`/channels/${channel._id}`);
+    setChannels((prev) => prev.filter((c) => c._id !== channel._id));
+    toast.success('Channel deleted');
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Failed to delete');
+  }
+};
+
 const handleLogout = async () => {
   try {
     await api.post('/auth/logout');
@@ -103,15 +158,35 @@ const handleLogout = async () => {
 
       <div className="workspaces">
         <h4>Workspaces</h4>
-        {workspaces.map((workspace) => (
-          <div
-            key={workspace._id}
-            className={`workspace-item ${selectedWorkspace?._id === workspace._id ? 'active' : ''}`}
-            onClick={() => handleWorkspaceClick(workspace)}
-          >
-            {workspace.name}
-          </div>
-        ))}
+      {workspaces.map((workspace) => (
+  <div key={workspace._id} className="workspace-row">
+    {editingWorkspace && selectedWorkspace?._id === workspace._id ? (
+      <div className="inline-edit">
+        <input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleRenameWorkspace()}
+          autoFocus
+        />
+        <span onClick={handleRenameWorkspace}>✓</span>
+        <span onClick={() => setEditingWorkspace(false)}>✕</span>
+      </div>
+    ) : (
+      <div
+        className={`workspace-item ${selectedWorkspace?._id === workspace._id ? 'active' : ''}`}
+        onClick={() => handleWorkspaceClick(workspace)}
+      >
+        {workspace.name}
+        {selectedWorkspace?._id === workspace._id && (
+          <span className="item-actions">
+            <span onClick={(e) => { e.stopPropagation(); setEditName(workspace.name); setEditingWorkspace(true); }}>✏️</span>
+            <span onClick={(e) => { e.stopPropagation(); handleDeleteWorkspace(); }}>🗑️</span>
+          </span>
+        )}
+      </div>
+    )}
+  </div>
+))}
         {selectedWorkspace && (
   <button className="add-btn" onClick={() => setShowInviteModal(true)}>
     🔗 Invite People
@@ -128,14 +203,32 @@ const handleLogout = async () => {
       <div className="channels">
         <h4>Channels</h4>
         {channels.map((channel) => (
-          <div
-            key={channel._id}
-            className={`channel-item ${selectedChannel?._id === channel._id ? 'active' : ''}`}
-            onClick={() => onChannelSelect(channel)}
-          >
-            # {channel.name}
-          </div>
-        ))}
+  <div key={channel._id} className="channel-row">
+    {editingChannel?._id === channel._id ? (
+      <div className="inline-edit">
+        <input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleRenameChannel(channel)}
+          autoFocus
+        />
+        <span onClick={() => handleRenameChannel(channel)}>✓</span>
+        <span onClick={() => setEditingChannel(null)}>✕</span>
+      </div>
+    ) : (
+      <div
+        className={`channel-item ${selectedChannel?._id === channel._id ? 'active' : ''}`}
+        onClick={() => onChannelSelect(channel)}
+      >
+        # {channel.name}
+        <span className="item-actions">
+          <span onClick={(e) => { e.stopPropagation(); setEditName(channel.name); setEditingChannel(channel); }}>✏️</span>
+          <span onClick={(e) => { e.stopPropagation(); handleDeleteChannel(channel); }}>🗑️</span>
+        </span>
+      </div>
+    )}
+  </div>
+))}
         {selectedWorkspace && (
           <button className="add-btn" onClick={() => setShowChannelModal(true)}>
             + New Channel

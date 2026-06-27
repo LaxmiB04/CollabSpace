@@ -363,8 +363,15 @@ useEffect(() => {
                       </div>
                     )
                   ))}
-                  {msg.readBy.length > 3 && (
-                    <span className="read-receipt-more">+{msg.readBy.length - 3}</span>
+                 {msg.readBy.length > 3 && (
+                    <div className="read-receipt-more-wrapper">
+                      <span className="read-receipt-more">+{msg.readBy.length - 3}</span>
+                      <div className="read-receipt-tooltip">
+                        {msg.readBy.slice(3).map((r) => (
+                          <span key={r._id}>{r.name}</span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

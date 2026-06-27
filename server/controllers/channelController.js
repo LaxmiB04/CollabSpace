@@ -1,5 +1,6 @@
 import Channel from '../models/Channel.js';
 import Workspace from '../models/Workspace.js';
+import Message from '../models/Message.js'; 
 
 // @route POST /api/channels
 export const createChannel = async (req, res) => {
@@ -65,6 +66,45 @@ export const getChannelById = async (req, res) => {
     }
 
     res.json(channel);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateChannel = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const channel = await Channel.findById(req.params.id);
+
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
+    }
+
+    if (name) channel.name = name;
+    if (description !== undefined) channel.description = description;
+    await channel.save();
+
+    res.json(channel);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteChannel = async (req, res) => {
+  try {
+    const channel = await Channel.findById(req.params.id);
+
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
+    }
+
+    await Message.deleteMany({ channel: channel._id });
+    await Workspace.findByIdAndUpdate(channel.workspace, {
+      $pull: { channels: channel._id },
+    });
+    await channel.deleteOne();
+
+    res.json({ message: 'Channel deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
