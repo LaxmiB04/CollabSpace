@@ -9,8 +9,9 @@ import { io } from 'socket.io-client';
 import NotificationBell from '../components/NotificationBell.jsx';
 import { getMe } from '../services/authService.js';
 
-const socket = io('http://localhost:5000');
-
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+});
 function Dashboard() {
   const { user, setUser } = useAuthStore();
   const navigate = useNavigate();

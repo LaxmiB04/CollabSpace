@@ -23,8 +23,9 @@ function Sidebar({ onChannelSelect, selectedChannel , onWorkspaceSelect}) {
   const [editingWorkspace, setEditingWorkspace] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [editName, setEditName] = useState('');
-  const socket = io('http://localhost:5000');
-
+const socket = io(import.meta.env.VITE_API_URL, {
+  withCredentials: true,
+});
   useEffect(() => {
   if (user) {
     socket.emit('userOnline', user._id);
