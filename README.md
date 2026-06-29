@@ -2,6 +2,12 @@
 
 A full-stack, real-time team collaboration platform built with the MERN stack. CollabSpace combines workspace-based team chat, channel messaging, task management, and member administration into a single SaaS-style application — similar in spirit to Slack + Trello.
 
+## Live Demo
+
+- **Frontend:** [https://collab-space-weld.vercel.app](https://collab-space-weld.vercel.app)
+- **Backend API:** [https://collabspace-4ho1.onrender.com](https://collabspace-4ho1.onrender.com)
+
+> Note: The backend is hosted on Render's free tier, which spins down with inactivity. The first request after a period of idle time may take 30–50 seconds to respond while the server wakes up.
 
 ## Features
 
